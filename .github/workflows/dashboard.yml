@@ -1,0 +1,97 @@
+# CareLink Live Dashboard
+# Runs the Log My Care scraper on a schedule and publishes the dashboard to GitHub Pages.
+#
+# This repository's root is the Dashboard folder (scraper.py, index.html, ... sit at the top level).
+#
+# Required repository secrets (Settings > Secrets and variables > Actions > New repository secret):
+#   LMC_EMAIL           Log My Care login email
+#   LMC_PASSWORD        Log My Care login password
+#   LMC_RESIDENTS_JSON  Contents of your local residents.json
+#                       ([{"id": "...", "name": "...", "staff_name": "...", "staff_email": "..."}, ...])
+#                       Only staff NAMES end up in the published data.json; emails are never published.
+#
+# Scraped data is NOT committed to the repository. It is generated fresh on every run
+# and only shipped inside the Pages deployment.
+
+name: CareLink Live Dashboard
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes (GitHub may delay scheduled runs at busy times)
+  workflow_dispatch:          # "Run workflow" button on the Actions tab
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two scrapes at once; let a running deployment finish
+concurrency:
+  group: carelink-dashboard
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Check secrets are configured
+        env:
+          LMC_EMAIL: ${{ secrets.LMC_EMAIL }}
+          LMC_PASSWORD: ${{ secrets.LMC_PASSWORD }}
+          LMC_RESIDENTS_JSON: ${{ secrets.LMC_RESIDENTS_JSON }}
+        run: |
+          missing=0
+          for name in LMC_EMAIL LMC_PASSWORD LMC_RESIDENTS_JSON; do
+            if [ -z "${!name}" ]; then echo "::error::Repository secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Run scraper
+        env:
+          LMC_EMAIL: ${{ secrets.LMC_EMAIL }}
+          LMC_PASSWORD: ${{ secrets.LMC_PASSWORD }}
+          LMC_RESIDENTS_JSON: ${{ secrets.LMC_RESIDENTS_JSON }}
+          PYTHONUNBUFFERED: '1'
+        run: python scraper.py
+
+      - name: Assemble site (frontend files + fresh data only)
+        run: |
+          mkdir -p _site
+          cp index.html app.js style.css cartoons.js data.json _site/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: scrape
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

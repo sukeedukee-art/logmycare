@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareLink • Live Log My Care Operational Dashboard</title>
+  <meta name="description" content="Real-time operational care monitoring dashboard for Log My Care incidents, support plans, goals, and future plans.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Live Sync Bar -->
+  <div id="top-sync-progress-bar" class="sync-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+
+  <!-- Header -->
+  <header id="main-header" class="header">
+    <div class="header-left">
+      <div class="brand-logo" id="brand-logo">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          <path d="M12 5v14"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <div class="brand-title-wrap">
+          <h1 id="dashboard-title">CareLink Live Monitor</h1>
+          <span class="live-pill" id="live-status-pill">
+            <span class="pulse-dot"></span>
+            LIVE
+          </span>
+        </div>
+        <p class="brand-subtitle">Log My Care Real-Time Service Auditing & Escalations</p>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="time-meta-card">
+        <div class="time-meta-item">
+          <span class="time-label">Last Live Sync:</span>
+          <span class="time-value mono" id="last-updated-text">Connecting...</span>
+        </div>
+        <div class="time-meta-item">
+          <span class="time-label">Next Auto-Refresh:</span>
+          <span class="time-value mono" id="next-sync-countdown">10:00</span>
+        </div>
+      </div>
+      <button id="btn-manual-refresh" class="btn-primary" aria-label="Force Live Refresh">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M21 21v-5h-5"/>
+        </svg>
+        <span>Refresh Now</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+    <!-- Quick Metric KPI Summary Row -->
+    <section id="kpi-summary-row" class="kpi-grid" aria-label="Operational KPI summary">
+      <!-- Active Residents -->
+      <div class="kpi-card kpi-teal" id="kpi-residents" data-filter="all">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Active Residents</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-residents">--</span>
+            <span class="kpi-badge">Monitored</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incidents: Needs Review -->
+      <div class="kpi-card kpi-amber" id="kpi-inc-needs-review" data-filter="needs_review">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Incidents (Needs Review)</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-needs-review">--</span>
+            <span class="kpi-badge badge-amber">Action Req.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incidents: Open -->
+      <div class="kpi-card kpi-blue" id="kpi-inc-open" data-filter="open">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Incidents (Open)</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-open">--</span>
+            <span class="kpi-badge badge-blue">Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support Plans: Overdue -->
+      <div class="kpi-card kpi-rose" id="kpi-support-plans" data-filter="support_plans">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Overdue Support Plans</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-support-plans">--</span>
+            <span class="kpi-badge badge-rose">Care Review</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goals: Overdue -->
+      <div class="kpi-card kpi-purple" id="kpi-goals" data-filter="goals">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Overdue Goals</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-goals">--</span>
+            <span class="kpi-badge badge-purple">Target Date</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Future Plans: Overdue -->
+      <div class="kpi-card kpi-orange" id="kpi-future-plans" data-filter="future_plans">
+        <div class="kpi-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Overdue Future Plans</span>
+          <div class="kpi-metric-wrap">
+            <span class="kpi-value" id="count-future-plans">--</span>
+            <span class="kpi-badge badge-orange">Contingency</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls Toolbar (Search & Filter Navigation) -->
+    <section class="toolbar-section">
+      <div class="filter-tabs" id="filter-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="all" role="tab" id="tab-all">All Items (<span id="tab-count-all">0</span>)</button>
+        <button class="tab-btn tab-amber" data-tab="needs_review" role="tab" id="tab-needs-review">Needs Review (<span id="tab-count-needs-review">0</span>)</button>
+        <button class="tab-btn tab-blue" data-tab="open" role="tab" id="tab-open">Open Incidents (<span id="tab-count-open">0</span>)</button>
+        <button class="tab-btn tab-rose" data-tab="support_plans" role="tab" id="tab-support-plans">Support Plans (<span id="tab-count-support-plans">0</span>)</button>
+        <button class="tab-btn tab-purple" data-tab="goals" role="tab" id="tab-goals">Goals Overdue (<span id="tab-count-goals">0</span>)</button>
+        <button class="tab-btn tab-orange" data-tab="future_plans" role="tab" id="tab-future-plans">Future Plans (<span id="tab-count-future-plans">0</span>)</button>
+      </div>
+
+      <div class="search-box-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" id="filter-search-input" class="search-input" placeholder="Search resident, incident, plan, or keyword..." aria-label="Search filter">
+        <button id="search-clear-btn" class="search-clear-btn" title="Clear search" aria-label="Clear search">×</button>
+      </div>
+    </section>
+
+    <!-- Dynamic Live Content Wrapper (Push Reload Animated Container) -->
+    <section id="cards-content-wrapper" class="cards-view-wrapper">
+      <!-- 5 Columns / Sections Grid -->
+      <div id="cards-grid" class="cards-grid">
+        <!-- Rendered via JavaScript with smooth animation -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal / Drawer for Card Full Details -->
+  <div id="item-details-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-badge-row">
+          <span id="modal-category-badge" class="badge">Category</span>
+          <span id="modal-status-badge" class="badge">Status</span>
+        </div>
+        <button id="modal-close-btn" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h2 id="modal-title" class="modal-item-title">Title</h2>
+        <div class="modal-meta-grid">
+          <div class="modal-meta-col">
+            <span class="meta-label">Resident Name</span>
+            <span class="meta-val" id="modal-resident">--</span>
+          </div>
+          <div class="modal-meta-col">
+            <span class="meta-label">Record Date / Due</span>
+            <span class="meta-val" id="modal-date">--</span>
+          </div>
+          <div class="modal-meta-col" id="modal-extra-col">
+            <span class="meta-label">Priority / Progress</span>
+            <span class="meta-val" id="modal-extra">--</span>
+          </div>
+          <div class="modal-meta-col">
+            <span class="meta-label">Key Worker</span>
+            <span class="meta-val" id="modal-staff">--</span>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h3>Full Description & Notes</h3>
+          <p id="modal-details" class="modal-details-text">--</p>
+        </div>
+
+        <!-- Email the responsible staff member -->
+        <form id="email-form" class="email-panel" hidden novalidate>
+          <h3>Email <span id="email-staff-name">key worker</span></h3>
+          <p class="email-help">The email is sent to the resident's key worker with the details above. Replies come straight back to you.</p>
+          <div class="email-grid">
+            <label class="email-field">
+              <span>Your name</span>
+              <input type="text" id="email-sender-name" maxlength="80" autocomplete="name" placeholder="e.g. Sara Khan">
+            </label>
+            <label class="email-field">
+              <span>Your email <em>*</em></span>
+              <input type="email" id="email-sender" maxlength="254" autocomplete="email" required placeholder="you@fortix.co.uk">
+            </label>
+          </div>
+          <label class="email-field">
+            <span>Note (optional)</span>
+            <textarea id="email-note" rows="3" maxlength="1000" placeholder="Anything you want to add..."></textarea>
+          </label>
+          <label class="email-check">
+            <input type="checkbox" id="email-copy" checked> Send me a copy
+          </label>
+          <p id="email-status" class="email-status" role="status" aria-live="polite"></p>
+          <div class="email-actions">
+            <button type="button" id="email-cancel-btn" class="btn-secondary">Cancel</button>
+            <button type="submit" id="email-send-btn" class="btn-primary">Send email</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-email-btn" class="btn-secondary btn-email" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+          <span id="modal-email-label">Email key worker</span>
+        </button>
+        <button id="modal-ok-btn" class="btn-primary">Acknowledge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="live-toast" class="toast-notification" role="status" aria-live="polite">
+    <span class="toast-icon">✓</span>
+    <span id="toast-text" class="toast-text">Data refreshed live</span>
+  </div>
+
+  <script src="cartoons.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
